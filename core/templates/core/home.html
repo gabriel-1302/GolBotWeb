@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>La Liga Predictor | AI Analytics</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <style>
+        :root {
+            --pitch-dark: #0f2d1f;
+            --pitch-light: #1a4a33;
+            --accent-gold: #d4af37;
+            --text-dark: #1a1a1a;
+            --text-light: #f8f9fa;
+            --brand-green: #00b894;
+        }
+
+        body {
+            background-color: #f0f2f5;
+            font-family: 'Inter', sans-serif;
+            color: var(--text-dark);
+        }
+
+        .navbar {
+            background-color: var(--pitch-dark);
+            border-bottom: 3px solid var(--accent-gold);
+        }
+
+        .brand-logo {
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--text-light);
+            text-transform: uppercase;
+        }
+
+        .main-card {
+            border: none;
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .card-header-custom {
+            background: linear-gradient(135deg, var(--pitch-dark) 0%, var(--pitch-light) 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .btn-predict {
+            background-color: var(--pitch-light);
+            color: white;
+            font-weight: 600;
+            padding: 12px;
+            border-radius: 8px;
+            border: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-predict:hover {
+            background-color: var(--pitch-dark);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(15, 45, 31, 0.3);
+        }
+
+        /* Estilos para los resultados */
+        .score-box {
+            background: var(--pitch-dark);
+            color: white;
+            border-radius: 8px;
+            padding: 1rem 2rem;
+            font-size: 3.5rem;
+            font-weight: 800;
+            line-height: 1;
+            letter-spacing: -2px;
+            display: inline-block;
+        }
+
+        .team-name {
+            font-size: 1.2rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            color: #555;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: #888;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--pitch-dark);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 200px;
+            width: 100%;
+        }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar navbar-expand-lg navbar-dark mb-5">
+        <div class="container">
+            <a class="navbar-brand brand-logo" href="#">La Liga <span style="color: var(--accent-gold);">AI Predictor</span></a>
+        </div>
+    </nav>
+
+    <div class="container pb-5">
+        <div class="row justify-content-center">
+            
+            <div class="col-lg-4 mb-4">
+                <div class="card main-card h-100">
+                    <div class="card-header-custom">
+                        <h4 class="mb-0 fw-bold">Configuración de Partido</h4>
+                        <small class="opacity-75">Selecciona los parámetros</small>
+                    </div>
+                    <div class="card-body p-4">
+                        {% if error %}
+                        <div class="alert alert-danger d-flex align-items-center" role="alert">
+                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
+                            <div>{{ error }}</div>
+                        </div>
+                        {% endif %}
+
+                        <form method="post">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Equipo Local</label>
+                                <select name="local" class="form-select" required>
+                                    <option value="" selected disabled>Seleccionar...</option>
+                                    {% for equipo in equipos %}
+                                    <option value="{{ equipo }}">{{ equipo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Equipo Visitante</label>
+                                <select name="visitante" class="form-select" required>
+                                    <option value="" selected disabled>Seleccionar...</option>
+                                    {% for equipo in equipos %}
+                                    <option value="{{ equipo }}">{{ equipo }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+
+                            <div class="row g-2 mb-4">
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Fecha</label>
+                                    <input type="date" name="fecha" class="form-control" required>
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label fw-bold">Hora</label>
+                                    <input type="time" name="hora" class="form-control" value="21:00">
+                                </div>
+                            </div>
+
+                            <button type="submit" class="btn btn-predict w-100">
+                                ANALIZAR PARTIDO
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-lg-8 mb-4">
+                {% if resultado %}
+                <div class="card main-card h-100">
+                    <div class="card-body p-0">
+                        
+                        <div class="text-center py-5 bg-white border-bottom">
+                            <div class="row align-items-center justify-content-center g-0">
+                                <div class="col-4 text-end px-3">
+                                    <div class="team-name">{{ resultado.local }}</div>
+                                </div>
+                                <div class="col-auto">
+                                    <div class="score-box shadow-sm">
+                                        {{ resultado.marcador_predicho }}
+                                    </div>
+                                </div>
+                                <div class="col-4 text-start px-3">
+                                    <div class="team-name">{{ resultado.visitante }}</div>
+                                </div>
+                            </div>
+                            <div class="mt-3">
+                                <span class="badge bg-light text-dark border">Predicción Mediana (P50)</span>
+                            </div>
+                        </div>
+
+                        <div class="row g-0">
+                            
+                            <div class="col-md-6 p-4 border-end">
+                                <h6 class="text-uppercase fw-bold mb-4 text-center">Probabilidades de Resultado</h6>
+                                <div class="chart-container mx-auto" style="height: 250px; width: 250px;">
+                                    <canvas id="probChart"></canvas>
+                                </div>
+                                <div class="text-center mt-3">
+                                    <small class="text-muted">Basado en miles de simulaciones</small>
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 p-4">
+                                <h6 class="text-uppercase fw-bold mb-4 text-center">Goles Esperados (xG)</h6>
+                                <div class="chart-container mx-auto" style="height: 250px; width: 100%;">
+                                    <canvas id="goalsChart"></canvas>
+                                </div>
+                                <div class="row text-center mt-3">
+                                    <div class="col-6">
+                                        <div class="stat-label">Local</div>
+                                        <div class="stat-value">{{ resultado.goles_local }}</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="stat-label">Visitante</div>
+                                        <div class="stat-value">{{ resultado.goles_visitante }}</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+                {% else %}
+                <div class="card main-card h-100 d-flex align-items-center justify-content-center bg-white text-muted p-5">
+                    <div class="text-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-bar-chart-line mb-3 opacity-25" viewBox="0 0 16 16">
+                            <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-5 0v-3H2v3h2z"/>
+                        </svg>
+                        <h5>Esperando datos...</h5>
+                        <p>Selecciona los equipos a la izquierda para ver el análisis de IA.</p>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    {% if resultado %}
+    <script>
+        // Configuración de colores
+        const colors = {
+            local: '#1a4a33',    // Verde oscuro
+            draw: '#95a5a6',     // Gris
+            visit: '#d4af37'     // Dorado
+        };
+
+        // 1. Gráfico de Probabilidades (Donut)
+        const ctxProb = document.getElementById('probChart').getContext('2d');
+        new Chart(ctxProb, {
+            type: 'doughnut',
+            data: {
+                labels: ['Victoria Local', 'Empate', 'Victoria Visitante'],
+                datasets: [{
+                    data: [
+                        {{ resultado.prob_victoria }}, 
+                        {{ resultado.prob_empate }}, 
+                        {{ resultado.prob_derrota }}
+                    ],
+                    backgroundColor: [colors.local, colors.draw, colors.visit],
+                    borderWidth: 0,
+                    hoverOffset: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { usePointStyle: true, font: { family: 'Inter', size: 11 } }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+
+        // 2. Gráfico de Goles (Bar)
+        const ctxGoals = document.getElementById('goalsChart').getContext('2d');
+        new Chart(ctxGoals, {
+            type: 'bar',
+            data: {
+                labels: ['{{ resultado.local }}', '{{ resultado.visitante }}'],
+                datasets: [{
+                    label: 'Goles Esperados',
+                    data: [{{ resultado.goles_local }}, {{ resultado.goles_visitante }}],
+                    backgroundColor: [colors.local, colors.visit],
+                    borderRadius: 4,
+                    barThickness: 40
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { display: false }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { display: true, color: '#f0f0f0' },
+                        ticks: { font: { family: 'Inter' } }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { font: { family: 'Inter', weight: '600' } }
+                    }
+                }
+            }
+        });
+    </script>
+    {% endif %}
+
+</body>
+</html>
