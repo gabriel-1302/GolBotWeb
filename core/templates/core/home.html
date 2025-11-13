@@ -2,144 +2,73 @@
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>La Liga Predictor | AI Analytics</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+    <title>La Liga AI | Match Analytics</title>
     
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@300;500;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
     <style>
         :root {
-            --pitch-dark: #0f2d1f;
-            --pitch-light: #1a4a33;
-            --accent-gold: #d4af37;
-            --text-dark: #1a1a1a;
-            --text-light: #f8f9fa;
-            --brand-green: #00b894;
+            --primary-dark: #0b1e27;
+            --primary-green: #00ff87; 
+            --secondary-gray: #f2f4f7;
+            --text-main: #111827;
         }
+        body { background-color: #eaeff2; font-family: 'Inter', sans-serif; padding-bottom: 40px; }
+        .navbar { background-color: var(--primary-dark); box-shadow: 0 4px 20px rgba(0,0,0,0.15); }
+        .brand-logo { font-family: 'Exo 2', sans-serif; font-weight: 900; font-style: italic; letter-spacing: -1px; color: white; }
+        .glass-card { background: white; border: none; border-radius: 16px; box-shadow: 0 8px 24px rgba(0,0,0,0.06); overflow: hidden; }
+        .header-gradient { background: linear-gradient(135deg, var(--primary-dark) 0%, #1a3c4a 100%); color: white; padding: 1.5rem; border-bottom: 4px solid var(--primary-green); }
+        .btn-predict { background-color: var(--primary-green); color: var(--primary-dark); font-weight: 800; text-transform: uppercase; padding: 15px; border-radius: 12px; border: none; letter-spacing: 1px; transition: all 0.2s ease; }
+        .btn-predict:hover { transform: translateY(-2px); box-shadow: 0 4px 15px rgba(0, 255, 135, 0.3); }
+        .match-header { background-image: radial-gradient(circle at center, #ffffff 0%, #f8f9fa 100%); padding: 2rem 0.5rem; border-bottom: 1px solid #eee; }
+        .score-display { font-family: 'Exo 2', sans-serif; font-weight: 900; font-size: 4rem; line-height: 1; color: var(--primary-dark); background: #fff; padding: 10px 20px; border-radius: 12px; box-shadow: inset 0 2px 6px rgba(0,0,0,0.05), 0 5px 15px rgba(0,0,0,0.05); display: inline-block; white-space: nowrap; }
+        .team-title { font-size: 1.1rem; font-weight: 700; text-transform: uppercase; color: #555; margin-top: 5px; }
+        .stat-mini-card { background: #f8f9fa; border-radius: 10px; padding: 10px; text-align: center; border: 1px solid #eee; }
+        .stat-mini-val { font-weight: 800; font-size: 1.2rem; }
+        .stat-mini-label { font-size: 0.7rem; text-transform: uppercase; color: #888; }
+        
+        /* Animación de carga */
+        .loading-spinner { display: none; width: 1.5rem; height: 1.5rem; border: 3px solid rgba(0,0,0,0.3); border-radius: 50%; border-top-color: #000; animation: spin 1s ease-in-out infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
 
-        body {
-            background-color: #f0f2f5;
-            font-family: 'Inter', sans-serif;
-            color: var(--text-dark);
-        }
-
-        .navbar {
-            background-color: var(--pitch-dark);
-            border-bottom: 3px solid var(--accent-gold);
-        }
-
-        .brand-logo {
-            font-weight: 800;
-            letter-spacing: -1px;
-            color: var(--text-light);
-            text-transform: uppercase;
-        }
-
-        .main-card {
-            border: none;
-            border-radius: 12px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.05);
-            overflow: hidden;
-        }
-
-        .card-header-custom {
-            background: linear-gradient(135deg, var(--pitch-dark) 0%, var(--pitch-light) 100%);
-            color: white;
-            padding: 2rem;
-            text-align: center;
-        }
-
-        .btn-predict {
-            background-color: var(--pitch-light);
-            color: white;
-            font-weight: 600;
-            padding: 12px;
-            border-radius: 8px;
-            border: none;
-            transition: all 0.3s ease;
-        }
-
-        .btn-predict:hover {
-            background-color: var(--pitch-dark);
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(15, 45, 31, 0.3);
-        }
-
-        /* Estilos para los resultados */
-        .score-box {
-            background: var(--pitch-dark);
-            color: white;
-            border-radius: 8px;
-            padding: 1rem 2rem;
-            font-size: 3.5rem;
-            font-weight: 800;
-            line-height: 1;
-            letter-spacing: -2px;
-            display: inline-block;
-        }
-
-        .team-name {
-            font-size: 1.2rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            color: #555;
-            margin-bottom: 0.5rem;
-        }
-
-        .stat-label {
-            font-size: 0.75rem;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            color: #888;
-            font-weight: 600;
-        }
-
-        .stat-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--pitch-dark);
-        }
-
-        .chart-container {
-            position: relative;
-            height: 200px;
-            width: 100%;
+        /* Responsivo */
+        @media (max-width: 768px) {
+            .score-display { font-size: 2.5rem; padding: 8px 15px; }
+            .team-title { font-size: 0.9rem; }
         }
     </style>
 </head>
 <body>
 
-    <nav class="navbar navbar-expand-lg navbar-dark mb-5">
+    <nav class="navbar navbar-dark sticky-top">
         <div class="container">
-            <a class="navbar-brand brand-logo" href="#">La Liga <span style="color: var(--accent-gold);">AI Predictor</span></a>
+            <a class="navbar-brand brand-logo" href="#">⚽ GOLBOT <span style="color: var(--primary-green);">AI</span></a>
         </div>
     </nav>
 
-    <div class="container pb-5">
-        <div class="row justify-content-center">
+    <div class="container mt-4">
+        <div class="row g-4">
             
-            <div class="col-lg-4 mb-4">
-                <div class="card main-card h-100">
-                    <div class="card-header-custom">
-                        <h4 class="mb-0 fw-bold">Configuración de Partido</h4>
-                        <small class="opacity-75">Selecciona los parámetros</small>
+            <div class="col-lg-4">
+                <div class="glass-card h-100">
+                    <div class="header-gradient">
+                        <h5 class="mb-0 fw-bold">Configuración</h5>
                     </div>
                     <div class="card-body p-4">
-                        {% if error %}
-                        <div class="alert alert-danger d-flex align-items-center" role="alert">
-                            <svg class="bi flex-shrink-0 me-2" width="24" height="24" role="img" aria-label="Danger:"><use xlink:href="#exclamation-triangle-fill"/></svg>
-                            <div>{{ error }}</div>
-                        </div>
-                        {% endif %}
+                        
+                        <div id="error-alert" class="alert alert-danger shadow-sm d-none" role="alert"></div>
 
-                        <form method="post">
+                        <form id="prediction-form">
                             {% csrf_token %}
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Equipo Local</label>
-                                <select name="local" class="form-select" required>
-                                    <option value="" selected disabled>Seleccionar...</option>
+                                <label class="form-label fw-bold text-muted small">LOCAL</label>
+                                <select name="local" class="form-select form-select-lg fw-bold" required>
+                                    <option value="" selected disabled>Elegir equipo...</option>
                                     {% for equipo in equipos %}
                                     <option value="{{ equipo }}">{{ equipo }}</option>
                                     {% endfor %}
@@ -147,9 +76,9 @@
                             </div>
 
                             <div class="mb-3">
-                                <label class="form-label fw-bold">Equipo Visitante</label>
-                                <select name="visitante" class="form-select" required>
-                                    <option value="" selected disabled>Seleccionar...</option>
+                                <label class="form-label fw-bold text-muted small">VISITANTE</label>
+                                <select name="visitante" class="form-select form-select-lg fw-bold" required>
+                                    <option value="" selected disabled>Elegir equipo...</option>
                                     {% for equipo in equipos %}
                                     <option value="{{ equipo }}">{{ equipo }}</option>
                                     {% endfor %}
@@ -157,169 +86,249 @@
                             </div>
 
                             <div class="row g-2 mb-4">
-                                <div class="col-6">
-                                    <label class="form-label fw-bold">Fecha</label>
+                                <div class="col-5">
+                                    <label class="form-label fw-bold text-muted small">FECHA</label>
                                     <input type="date" name="fecha" class="form-control" required>
                                 </div>
-                                <div class="col-6">
-                                    <label class="form-label fw-bold">Hora</label>
-                                    <input type="time" name="hora" class="form-control" value="21:00">
+                                <div class="col-3">
+                                    <label class="form-label fw-bold text-muted small">HORA</label>
+                                    <input type="time" name="hora" class="form-control" value="21:00" required>
+                                </div>
+                                <div class="col-4">
+                                    <label class="form-label fw-bold text-muted small">JORNADA</label>
+                                    <input type="number" name="jornada" class="form-control" min="1" max="38" value="1" required>
                                 </div>
                             </div>
 
-                            <button type="submit" class="btn btn-predict w-100">
-                                ANALIZAR PARTIDO
+                            <button type="submit" id="btn-submit" class="btn btn-predict w-100 d-flex justify-content-center align-items-center gap-2">
+                                <span>ANALIZAR PARTIDO</span>
+                                <div class="loading-spinner"></div>
                             </button>
                         </form>
                     </div>
                 </div>
             </div>
 
-            <div class="col-lg-8 mb-4">
-                {% if resultado %}
-                <div class="card main-card h-100">
-                    <div class="card-body p-0">
-                        
-                        <div class="text-center py-5 bg-white border-bottom">
-                            <div class="row align-items-center justify-content-center g-0">
-                                <div class="col-4 text-end px-3">
-                                    <div class="team-name">{{ resultado.local }}</div>
+            <div class="col-lg-8">
+                
+                <div id="placeholder-card" class="glass-card h-100 d-flex align-items-center justify-content-center text-center p-5">
+                    <div>
+                        <h4 class="fw-bold text-muted">Esperando Datos</h4>
+                        <p class="text-muted small">Selecciona equipos y pulsa Analizar.</p>
+                    </div>
+                </div>
+
+                <div id="results-card" class="d-none">
+                    <div class="d-flex justify-content-end mb-2">
+                        <button onclick="downloadPDF()" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                            📥 Descargar PDF
+                        </button>
+                    </div>
+
+                    <div id="pdf-content" class="glass-card">
+                        <div class="match-header text-center">
+                            <div class="row align-items-center g-1">
+                                <div class="col-4 text-end px-1"><div id="res-local" class="team-title">Local</div></div>
+                                <div class="col-4 px-0">
+                                    <div id="res-score" class="score-display">-</div>
+                                    <div class="mt-2 text-success fw-bold small"><span class="badge bg-success bg-opacity-10 text-success border border-success">AI CONFIDENCE</span></div>
                                 </div>
-                                <div class="col-auto">
-                                    <div class="score-box shadow-sm">
-                                        {{ resultado.marcador_predicho }}
-                                    </div>
-                                </div>
-                                <div class="col-4 text-start px-3">
-                                    <div class="team-name">{{ resultado.visitante }}</div>
-                                </div>
-                            </div>
-                            <div class="mt-3">
-                                <span class="badge bg-light text-dark border">Predicción Mediana (P50)</span>
+                                <div class="col-4 text-start px-1"><div id="res-visit" class="team-title">Visita</div></div>
                             </div>
                         </div>
 
-                        <div class="row g-0">
-                            
-                            <div class="col-md-6 p-4 border-end">
-                                <h6 class="text-uppercase fw-bold mb-4 text-center">Probabilidades de Resultado</h6>
-                                <div class="chart-container mx-auto" style="height: 250px; width: 250px;">
-                                    <canvas id="probChart"></canvas>
-                                </div>
-                                <div class="text-center mt-3">
-                                    <small class="text-muted">Basado en miles de simulaciones</small>
-                                </div>
-                            </div>
-
-                            <div class="col-md-6 p-4">
-                                <h6 class="text-uppercase fw-bold mb-4 text-center">Goles Esperados (xG)</h6>
-                                <div class="chart-container mx-auto" style="height: 250px; width: 100%;">
-                                    <canvas id="goalsChart"></canvas>
-                                </div>
-                                <div class="row text-center mt-3">
-                                    <div class="col-6">
-                                        <div class="stat-label">Local</div>
-                                        <div class="stat-value">{{ resultado.goles_local }}</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="stat-label">Visitante</div>
-                                        <div class="stat-value">{{ resultado.goles_visitante }}</div>
+                        <div class="card-body p-0">
+                            <div class="row g-0">
+                                <div class="col-md-4 p-4 border-end border-light">
+                                    <h6 class="text-center fw-bold text-muted small mb-3">PROBABILIDAD</h6>
+                                    <div class="chart-container mx-auto position-relative" style="height: 200px; width: 100%;">
+                                        <canvas id="probChart"></canvas>
+                                        <div id="centerText" style="position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); text-align: center;">
+                                            <div id="win-pct" style="font-size: 1.5rem; font-weight: 800; line-height:1;"></div>
+                                            <div style="font-size: 0.6rem; color: #888;">WIN CHANCE</div>
+                                        </div>
                                     </div>
                                 </div>
+                                <div class="col-md-4 p-4 border-end border-light">
+                                    <h6 class="text-center fw-bold text-muted small mb-3">STATS IA</h6>
+                                    <div class="chart-container mx-auto" style="height: 200px; width: 100%;">
+                                        <canvas id="radarChart"></canvas>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 p-4">
+                                    <h6 class="text-center fw-bold text-muted small mb-3">GOLES (xG)</h6>
+                                    <div class="chart-container mx-auto" style="height: 150px; width: 100%;">
+                                        <canvas id="goalsChart"></canvas>
+                                    </div>
+                                    <div class="row mt-2">
+                                        <div class="col-6"><div class="stat-mini-card"><div id="xg-local" class="stat-mini-val text-success">0</div><div class="stat-mini-label">Local</div></div></div>
+                                        <div class="col-6"><div class="stat-mini-card"><div id="xg-visit" class="stat-mini-val text-primary">0</div><div class="stat-mini-label">Visita</div></div></div>
+                                    </div>
+                                </div>
                             </div>
-
+                            <div class="p-2 bg-light text-center d-none d-print-block"><small>Generado por GolBot AI</small></div>
                         </div>
                     </div>
                 </div>
-                {% else %}
-                <div class="card main-card h-100 d-flex align-items-center justify-content-center bg-white text-muted p-5">
-                    <div class="text-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" fill="currentColor" class="bi bi-bar-chart-line mb-3 opacity-25" viewBox="0 0 16 16">
-                            <path d="M11 2a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v12h.5a.5.5 0 0 1 0 1H.5a.5.5 0 0 1 0-1H1v-3a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v3h1V7a1 1 0 0 1 1-1h2a1 1 0 0 1 1 1v7h1V2zm1 12h2V2h-2v12zm-3 0V7H7v7h2zm-5 0v-3H2v3h2z"/>
-                        </svg>
-                        <h5>Esperando datos...</h5>
-                        <p>Selecciona los equipos a la izquierda para ver el análisis de IA.</p>
-                    </div>
-                </div>
-                {% endif %}
             </div>
         </div>
     </div>
 
-    {% if resultado %}
     <script>
-        // Configuración de colores
-        const colors = {
-            local: '#1a4a33',    // Verde oscuro
-            draw: '#95a5a6',     // Gris
-            visit: '#d4af37'     // Dorado
-        };
+        // Variables Globales para los Charts
+        let probChart = null;
+        let radarChart = null;
+        let goalsChart = null;
 
-        // 1. Gráfico de Probabilidades (Donut)
-        const ctxProb = document.getElementById('probChart').getContext('2d');
-        new Chart(ctxProb, {
-            type: 'doughnut',
-            data: {
-                labels: ['Victoria Local', 'Empate', 'Victoria Visitante'],
-                datasets: [{
-                    data: [
-                        {{ resultado.prob_victoria }}, 
-                        {{ resultado.prob_empate }}, 
-                        {{ resultado.prob_derrota }}
-                    ],
-                    backgroundColor: [colors.local, colors.draw, colors.visit],
-                    borderWidth: 0,
-                    hoverOffset: 4
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: {
-                        position: 'bottom',
-                        labels: { usePointStyle: true, font: { family: 'Inter', size: 11 } }
-                    }
-                },
-                cutout: '70%'
-            }
-        });
+        document.getElementById('prediction-form').addEventListener('submit', async function(e) {
+            e.preventDefault(); // 1. EVITA LA RECARGA DE PÁGINA
 
-        // 2. Gráfico de Goles (Bar)
-        const ctxGoals = document.getElementById('goalsChart').getContext('2d');
-        new Chart(ctxGoals, {
-            type: 'bar',
-            data: {
-                labels: ['{{ resultado.local }}', '{{ resultado.visitante }}'],
-                datasets: [{
-                    label: 'Goles Esperados',
-                    data: [{{ resultado.goles_local }}, {{ resultado.goles_visitante }}],
-                    backgroundColor: [colors.local, colors.visit],
-                    borderRadius: 4,
-                    barThickness: 40
-                }]
-            },
-            options: {
-                responsive: true,
-                maintainAspectRatio: false,
-                plugins: {
-                    legend: { display: false }
-                },
-                scales: {
-                    y: {
-                        beginAtZero: true,
-                        grid: { display: true, color: '#f0f0f0' },
-                        ticks: { font: { family: 'Inter' } }
-                    },
-                    x: {
-                        grid: { display: false },
-                        ticks: { font: { family: 'Inter', weight: '600' } }
+            // UI: Mostrar Loading
+            const btn = document.getElementById('btn-submit');
+            const spinner = btn.querySelector('.loading-spinner');
+            const btnText = btn.querySelector('span');
+            const errorAlert = document.getElementById('error-alert');
+            
+            btn.disabled = true;
+            spinner.style.display = 'block';
+            btnText.innerText = 'CALCULANDO...';
+            errorAlert.classList.add('d-none');
+
+            // Datos del Formulario
+            const formData = new FormData(this);
+
+            try {
+                // 2. PETICIÓN AJAX A DJANGO
+                const response = await fetch('', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
                     }
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    renderResults(result.data);
+                } else {
+                    showError(result.error);
                 }
+
+            } catch (err) {
+                showError("Error de conexión con el servidor.");
+                console.error(err);
+            } finally {
+                // UI: Restaurar botón
+                btn.disabled = false;
+                spinner.style.display = 'none';
+                btnText.innerText = 'ANALIZAR PARTIDO';
             }
         });
-    </script>
-    {% endif %}
 
+        function showError(msg) {
+            const alert = document.getElementById('error-alert');
+            alert.innerText = msg;
+            alert.classList.remove('d-none');
+        }
+
+        function renderResults(data) {
+            // Ocultar placeholder, mostrar resultados
+            document.getElementById('placeholder-card').classList.add('d-none');
+            document.getElementById('results-card').classList.remove('d-none');
+
+            // Actualizar Textos
+            document.getElementById('res-local').innerText = data.local;
+            document.getElementById('res-visit').innerText = data.visitante;
+            document.getElementById('res-score').innerText = data.marcador_predicho;
+            document.getElementById('xg-local').innerText = data.goles_local;
+            document.getElementById('xg-visit').innerText = data.goles_visitante;
+
+            // --- ACTUALIZAR GRÁFICOS ---
+            const cLocal = '#00b894';
+            const cDraw = '#b2bec3';
+            const cVisit = '#0984e3';
+
+            // 1. Donut (Probabilidad)
+            if (probChart) probChart.destroy();
+            const ctxProb = document.getElementById('probChart').getContext('2d');
+            
+            // Texto central
+            let maxProb = Math.max(data.prob_victoria, data.prob_empate, data.prob_derrota);
+            let centerTxt = (maxProb === data.prob_victoria) ? data.prob_victoria + "%" : 
+                            (maxProb === data.prob_derrota) ? data.prob_derrota + "%" : data.prob_empate + "%";
+            document.querySelector('#win-pct').innerText = centerTxt;
+
+            probChart = new Chart(ctxProb, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Gana Local', 'Empate', 'Gana Visita'],
+                    datasets: [{
+                        data: [data.prob_victoria, data.prob_empate, data.prob_derrota],
+                        backgroundColor: [cLocal, cDraw, cVisit],
+                        borderWidth: 0
+                    }]
+                },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { display: false } } }
+            });
+
+            // 2. Radar
+            if (radarChart) radarChart.destroy();
+            const ctxRadar = document.getElementById('radarChart').getContext('2d');
+            radarChart = new Chart(ctxRadar, {
+                type: 'radar',
+                data: {
+                    labels: ['Ataque', 'Dominio', 'Defensa'],
+                    datasets: [{
+                        label: data.local,
+                        data: [data.goles_local * 30, data.prob_victoria, 100 - data.prob_derrota],
+                        borderColor: cLocal, backgroundColor: 'rgba(0, 184, 148, 0.2)', borderWidth: 2, pointRadius: 0
+                    }, {
+                        label: data.visitante,
+                        data: [data.goles_visitante * 30, data.prob_derrota, 100 - data.prob_victoria],
+                        borderColor: cVisit, backgroundColor: 'rgba(9, 132, 227, 0.2)', borderWidth: 2, pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { position: 'top', labels: { font: {size: 9}, boxWidth: 8 } } },
+                    scales: { r: { suggestedMin: 0, suggestedMax: 100, ticks: { display: false }, grid: { color: '#eee' }, pointLabels: { font: { size: 9, weight: 'bold' } } } }
+                }
+            });
+
+            // 3. Barras (Goles)
+            if (goalsChart) goalsChart.destroy();
+            const ctxGoals = document.getElementById('goalsChart').getContext('2d');
+            goalsChart = new Chart(ctxGoals, {
+                type: 'bar',
+                data: {
+                    labels: [data.local, data.visitante],
+                    datasets: [{
+                        data: [data.goles_local, data.goles_visitante],
+                        backgroundColor: [cLocal, cVisit],
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: { x: { display: false }, y: { grid: { display: false }, ticks: { font: { weight: 'bold', size: 10 } } } }
+                }
+            });
+        }
+
+        window.downloadPDF = function() {
+            const { jsPDF } = window.jspdf;
+            const element = document.getElementById('pdf-content');
+            html2canvas(element, { scale: 2, backgroundColor: '#ffffff' }).then(canvas => {
+                const imgData = canvas.toDataURL('image/png');
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const pdfWidth = pdf.internal.pageSize.getWidth();
+                const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+                pdf.addImage(imgData, 'PNG', 0, 10, pdfWidth, pdfHeight);
+                pdf.save('Prediccion_GolBot.pdf');
+            });
+        }
+    </script>
 </body>
 </html>
